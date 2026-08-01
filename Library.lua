@@ -1047,24 +1047,55 @@ type IconModule = {
     GetAsset: (Name: string) -> Icon?,
 }
 
-local FetchIcons, Icons = pcall(function()
-    -- Пробуем оригинальный URL
-    local urls = {
-        "https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua",
-        "https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/main/source.lua",
-    }
-    local lastErr
-    for _, url in ipairs(urls) do
-        local ok, result = pcall(function()
-            return (loadstring(game:HttpGet(url)) :: () -> IconModule)()
-        end)
-        if ok and type(result) == "table" and type(result.GetAsset) == "function" then
-            return result
-        end
-        lastErr = result
-    end
-    error(tostring(lastErr))
-end)
+-- Встроенные иконки через прямые rbxassetid (без HTTP-запросов к GitHub)
+-- Каждая иконка — отдельный Roblox ассет, работает всегда
+local BuiltinIcons: { [string]: string } = {
+    ["crosshair"]    = "rbxassetid://7743870010",
+    ["coins"]        = "rbxassetid://7743866529",
+    ["user"]         = "rbxassetid://7733796546",
+    ["box"]          = "rbxassetid://7733754052",
+    ["eye"]          = "rbxassetid://7733774602",
+    ["map-pin"]      = "rbxassetid://7733783719",
+    ["zap"]          = "rbxassetid://7743873671",
+    ["shield"]       = "rbxassetid://7733793266",
+    ["settings"]     = "rbxassetid://7733790670",
+    ["palette"]      = "rbxassetid://7733786578",
+    ["search"]       = "rbxassetid://7733790046",
+    ["move"]         = "rbxassetid://7733785144",
+    ["key"]          = "rbxassetid://7733779671",
+    ["check"]        = "rbxassetid://7733763272",
+    ["chevron-up"]   = "rbxassetid://7733765307",
+    ["move-diagonal-2"] = "rbxassetid://7733784571",
+    ["x"]            = "rbxassetid://7733797847",
+    ["minus"]        = "rbxassetid://7733783280",
+    ["plus"]         = "rbxassetid://7733788000",
+    ["info"]         = "rbxassetid://7733777895",
+    ["alert-triangle"] = "rbxassetid://7733752008",
+    ["star"]         = "rbxassetid://7733794090",
+    ["trash"]        = "rbxassetid://7733795620",
+    ["home"]         = "rbxassetid://7733776853",
+    ["lock"]         = "rbxassetid://7733782543",
+    ["unlock"]       = "rbxassetid://7733796092",
+    ["wifi"]         = "rbxassetid://7733797290",
+    ["globe"]        = "rbxassetid://7733775997",
+    ["cpu"]          = "rbxassetid://7733769006",
+    ["monitor"]      = "rbxassetid://7733784143",
+}
+
+local FetchIcons = true
+local Icons = {
+    Icons = BuiltinIcons,
+    GetAsset = function(Name: string): Icon?
+        local url = BuiltinIcons[Name]
+        if not url then return nil end
+        return {
+            IconName = Name,
+            Url = url,
+            ImageRectOffset = Vector2.zero,
+            ImageRectSize = Vector2.zero,
+        }
+    end,
+}
 
 function Library:GetIcon(IconName: string)
     if not FetchIcons or type(Icons) ~= "table" or type(Icons.GetAsset) ~= "function" then
