@@ -1048,32 +1048,22 @@ type IconModule = {
 }
 
 local FetchIcons, Icons = pcall(function()
-    local ok, IconsV2 = pcall(function()
-        return loadstring(
-            game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
-        )()
-    end)
-    if not ok or type(IconsV2) ~= "table" then
-        error("failed to load IconsV2")
-    end
-    IconsV2.SetIconsType("lucide")
-    return {
-        Icons = {},
-        GetAsset = function(name)
-            local result = IconsV2.GetIcon(name, "lucide")
-            if not result then return nil end
-            -- result is { spritesheet_url, { Image, ImageRectSize, ImageRectPosition } }
-            local url = result[1] or result.Image or ""
-            local data = result[2] or result
-            return {
-                Url = url,
-                Id = 0,
-                IconName = name,
-                ImageRectOffset = (data and data.ImageRectPosition) or Vector2.zero,
-                ImageRectSize = (data and data.ImageRectSize) or Vector2.zero,
-            }
-        end,
+    -- Пробуем оригинальный URL
+    local urls = {
+        "https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua",
+        "https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/main/source.lua",
     }
+    local lastErr
+    for _, url in ipairs(urls) do
+        local ok, result = pcall(function()
+            return (loadstring(game:HttpGet(url)) :: () -> IconModule)()
+        end)
+        if ok and type(result) == "table" and type(result.GetAsset) == "function" then
+            return result
+        end
+        lastErr = result
+    end
+    error(tostring(lastErr))
 end)
 
 function Library:GetIcon(IconName: string)
@@ -1081,8 +1071,8 @@ function Library:GetIcon(IconName: string)
         return
     end
 
-    local Success, Icon = pcall(Icons.GetAsset, IconName)
-    if not Success then
+    local Success, Icon = pcall(Icons.GetAsset, Icons, IconName)
+    if not Success or Icon == nil then
         return
     end
     return Icon
