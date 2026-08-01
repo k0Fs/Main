@@ -1047,7 +1047,34 @@ type IconModule = {
     GetAsset: (Name: string) -> Icon?,
 }
 
-local FetchIcons, Icons = false, nil
+local FetchIcons, Icons = pcall(function()
+    local ok, IconsV2 = pcall(function()
+        return loadstring(
+            game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua")
+        )()
+    end)
+    if not ok or type(IconsV2) ~= "table" then
+        error("failed to load IconsV2")
+    end
+    IconsV2.SetIconsType("lucide")
+    return {
+        Icons = {},
+        GetAsset = function(name)
+            local result = IconsV2.GetIcon(name, "lucide")
+            if not result then return nil end
+            -- result is { spritesheet_url, { Image, ImageRectSize, ImageRectPosition } }
+            local url = result[1] or result.Image or ""
+            local data = result[2] or result
+            return {
+                Url = url,
+                Id = 0,
+                IconName = name,
+                ImageRectOffset = (data and data.ImageRectPosition) or Vector2.zero,
+                ImageRectSize = (data and data.ImageRectSize) or Vector2.zero,
+            }
+        end,
+    }
+end)
 
 function Library:GetIcon(IconName: string)
     if not FetchIcons or type(Icons) ~= "table" or type(Icons.GetAsset) ~= "function" then
