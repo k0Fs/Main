@@ -1047,14 +1047,10 @@ type IconModule = {
     GetAsset: (Name: string) -> Icon?,
 }
 
-local FetchIcons, Icons = pcall(function()
-    return (loadstring(
-        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
-    ) :: () -> IconModule)()
-end)
+local FetchIcons, Icons = false, nil
 
 function Library:GetIcon(IconName: string)
-    if not FetchIcons then
+    if not FetchIcons or type(Icons) ~= "table" or type(Icons.GetAsset) ~= "function" then
         return
     end
 
