@@ -799,7 +799,7 @@ function Library:CreateWindow(cfg)
         })
         dz.InputBegan:Connect(function(i)
             if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                drag=true ds=i.Position sp=mf.Position
+                drag=true; ds=i.Position; sp=mf.Position
             end
         end)
         UserInputService.InputChanged:Connect(function(i)
@@ -988,22 +988,6 @@ function Library:CreateWindow(cfg)
             Parent=btn,
         })
 
-        mk("TextButton", {
-            Text="", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, ZIndex=2, Parent=btn,
-        }).MouseButton1Click:Connect(function() setActive(tabObj) end)
-
-        btn.MouseEnter:Connect(function()
-            if activeTab ~= tabObj then
-                btn.BackgroundTransparency = 0
-                tw(btn, {BackgroundColor3=T.SurfaceHov})
-            end
-        end)
-        btn.MouseLeave:Connect(function()
-            if activeTab ~= tabObj then
-                btn.BackgroundTransparency = 1
-            end
-        end)
-
         -- Tab page (two columns)
         local page = mk("ScrollingFrame", {
             Name="Page_"..tabName, Size=UDim2.new(1,-4,1,-4),
@@ -1038,6 +1022,7 @@ function Library:CreateWindow(cfg)
         })
         listLayout(Enum.FillDirection.Vertical, Enum.HorizontalAlignment.Left, 8, rightCol)
 
+        -- tabObj must be declared BEFORE the click handler references it
         local tabObj = {
             _btn  = btn,
             _lbl  = lbl,
@@ -1045,6 +1030,22 @@ function Library:CreateWindow(cfg)
             _page = page,
         }
         table.insert(allTabs, tabObj)
+
+        mk("TextButton", {
+            Text="", Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, ZIndex=2, Parent=btn,
+        }).MouseButton1Click:Connect(function() setActive(tabObj) end)
+
+        btn.MouseEnter:Connect(function()
+            if activeTab ~= tabObj then
+                btn.BackgroundTransparency = 0
+                tw(btn, {BackgroundColor3=T.SurfaceHov})
+            end
+        end)
+        btn.MouseLeave:Connect(function()
+            if activeTab ~= tabObj then
+                btn.BackgroundTransparency = 1
+            end
+        end)
 
         -- AddLeftGroupbox / AddRightGroupbox — exact Obsidian API
         function tabObj:AddLeftGroupbox(gbName)
