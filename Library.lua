@@ -509,6 +509,30 @@ local Templates = {
         Height = 200,
         Visible = true,
     },
+    ESPPreview = {
+        Height = 220,
+        Interactive = true,
+        AutoFocus = true,
+        Character = nil,
+        ShowBox = true,
+        BoxColor = Color3.fromRGB(255, 255, 255),
+        BoxOutline = true,
+        ShowSkeleton = true,
+        SkeletonColor = Color3.fromRGB(255, 255, 255),
+        ShowName = true,
+        NameText = "zitrexol",
+        NameColor = Color3.fromRGB(150, 180, 255),
+        ShowChams = false,
+        ChamsColor = Color3.fromRGB(255, 0, 100),
+        ChamsMaterial = "ForceField",
+        ChamsTransparency = 0.5,
+        ShowWeapon = false,
+        WeaponText = "Gun",
+        WeaponColor = Color3.fromRGB(255, 255, 255),
+        ShowHealth = false,
+        HealthPercent = 100,
+        Visible = true,
+    },
     Image = {
         Image = "",
         Transparency = 0,
@@ -7269,6 +7293,499 @@ do
         end
 
         return Viewport
+    end
+
+    function Funcs:AddESPPreview(Idx, Info)
+        if self.Destroyed then return nil end
+
+        Info = Library:Validate(Info, Templates.ESPPreview)
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local Dragging, Pinching = false, false
+        local LastMousePos, LastPinchDist = nil, 0
+
+        local Camera = if not Info.Camera then Instance.new("Camera") else Info.Camera
+        Camera.FieldOfView = 50
+
+        local Holder = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, Info.Height),
+            Visible = Info.Visible,
+            Parent = Container,
+        })
+
+        local Box = New("Frame", {
+            AnchorPoint = Vector2.new(0, 1),
+            BackgroundColor3 = "MainColor",
+            BorderColor3 = "OutlineColor",
+            BorderSizePixel = 1,
+            Position = UDim2.fromScale(0, 1),
+            Size = UDim2.fromScale(1, 1),
+            ClipsDescendants = true,
+            Parent = Holder,
+        })
+
+        New("UIPadding", {
+            PaddingBottom = UDim.new(0, 4),
+            PaddingLeft = UDim.new(0, 4),
+            PaddingRight = UDim.new(0, 4),
+            PaddingTop = UDim.new(0, 4),
+            Parent = Box,
+        })
+
+        local ViewportFrame = New("ViewportFrame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            CurrentCamera = Camera,
+            Active = Info.Interactive,
+            Parent = Box,
+        })
+
+        local WorldModel = Instance.new("WorldModel")
+        WorldModel.Parent = ViewportFrame
+
+        local CharacterModel = Instance.new("Model")
+        CharacterModel.Name = "ESPPreviewCharacter"
+        CharacterModel.Parent = WorldModel
+
+        local OriginalProperties = {}
+
+        local function BuildDummy()
+            for _, child in ipairs(CharacterModel:GetChildren()) do
+                child:Destroy()
+            end
+            table.clear(OriginalProperties)
+
+            local lp = Players.LocalPlayer
+            local realChar = lp and lp.Character
+            local clonedFromReal = false
+
+            if realChar and realChar:FindFirstChild("HumanoidRootPart") then
+                local hrp = realChar.HumanoidRootPart
+                for _, part in ipairs(realChar:GetChildren()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        local p = part:Clone()
+                        p.CanCollide = false
+                        p.Anchored = true
+                        p.CastShadow = false
+                        p.CFrame = hrp.CFrame:Inverse() * part.CFrame
+                        p.Parent = CharacterModel
+                        OriginalProperties[p] = {
+                            Color = part.Color,
+                            Material = part.Material,
+                            Transparency = part.Transparency,
+                        }
+                        clonedFromReal = true
+                    end
+                end
+            end
+
+            if not clonedFromReal then
+                local partsData = {
+                    {"Head", Vector3.new(0, 2.0, 0), Vector3.new(1.2, 1.2, 1.2)},
+                    {"UpperTorso", Vector3.new(0, 0.8, 0), Vector3.new(2.0, 1.6, 1.0)},
+                    {"LowerTorso", Vector3.new(0, -0.4, 0), Vector3.new(2.0, 0.8, 1.0)},
+                    {"LeftUpperArm", Vector3.new(-1.5, 0.8, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"LeftLowerArm", Vector3.new(-1.5, -0.4, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"LeftHand", Vector3.new(-1.5, -1.4, 0), Vector3.new(1.0, 0.4, 1.0)},
+                    {"RightUpperArm", Vector3.new(1.5, 0.8, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"RightLowerArm", Vector3.new(1.5, -0.4, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"RightHand", Vector3.new(1.5, -1.4, 0), Vector3.new(1.0, 0.4, 1.0)},
+                    {"LeftUpperLeg", Vector3.new(-0.5, -1.4, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"LeftLowerLeg", Vector3.new(-0.5, -2.6, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"LeftFoot", Vector3.new(-0.5, -3.6, 0), Vector3.new(1.0, 0.4, 1.0)},
+                    {"RightUpperLeg", Vector3.new(0.5, -1.4, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"RightLowerLeg", Vector3.new(0.5, -2.6, 0), Vector3.new(1.0, 1.6, 1.0)},
+                    {"RightFoot", Vector3.new(0.5, -3.6, 0), Vector3.new(1.0, 0.4, 1.0)},
+                }
+                for _, d in ipairs(partsData) do
+                    local p = Instance.new("Part")
+                    p.Name = d[1]
+                    p.CFrame = CFrame.new(d[2])
+                    p.Size = d[3]
+                    p.Material = Enum.Material.SmoothPlastic
+                    p.Color = Color3.fromRGB(180, 180, 185)
+                    p.CanCollide = false
+                    p.Anchored = true
+                    p.CastShadow = false
+                    p.Parent = CharacterModel
+                    OriginalProperties[p] = {
+                        Color = p.Color,
+                        Material = p.Material,
+                        Transparency = 0,
+                    }
+                end
+            end
+        end
+
+        BuildDummy()
+
+        local SkeletonFolder = Instance.new("Folder")
+        SkeletonFolder.Name = "SkeletonBones"
+        SkeletonFolder.Parent = CharacterModel
+
+        local BONE_PAIRS = {
+            {"Head", "UpperTorso"},
+            {"UpperTorso", "LowerTorso"},
+            {"UpperTorso", "LeftUpperArm"},
+            {"LeftUpperArm", "LeftLowerArm"},
+            {"LeftLowerArm", "LeftHand"},
+            {"UpperTorso", "RightUpperArm"},
+            {"RightUpperArm", "RightLowerArm"},
+            {"RightLowerArm", "RightHand"},
+            {"LowerTorso", "LeftUpperLeg"},
+            {"LeftUpperLeg", "LeftLowerLeg"},
+            {"LeftLowerLeg", "LeftFoot"},
+            {"LowerTorso", "RightUpperLeg"},
+            {"RightUpperLeg", "RightLowerLeg"},
+            {"RightLowerLeg", "RightFoot"},
+        }
+
+        local Bones = {}
+
+        local function BuildSkeleton()
+            for _, b in ipairs(Bones) do
+                b:Destroy()
+            end
+            table.clear(Bones)
+
+            for _, pair in ipairs(BONE_PAIRS) do
+                local p1 = CharacterModel:FindFirstChild(pair[1])
+                local p2 = CharacterModel:FindFirstChild(pair[2])
+                if p1 and p2 then
+                    local pos1 = p1.Position
+                    local pos2 = p2.Position
+                    local dist = (pos1 - pos2).Magnitude
+                    local center = pos1:Lerp(pos2, 0.5)
+
+                    local bone = Instance.new("Part")
+                    bone.Name = "Bone_" .. pair[1] .. "_" .. pair[2]
+                    bone.Material = Enum.Material.Neon
+                    bone.Color = Info.SkeletonColor or Color3.fromRGB(255, 255, 255)
+                    bone.Transparency = Info.ShowSkeleton and 0 or 1
+                    bone.CanCollide = false
+                    bone.Anchored = true
+                    bone.CastShadow = false
+                    bone.Size = Vector3.new(0.12, 0.12, dist)
+                    bone.CFrame = CFrame.lookAt(center, pos2)
+                    bone.Parent = SkeletonFolder
+                    table.insert(Bones, bone)
+                end
+            end
+        end
+
+        BuildSkeleton()
+
+        local function ResetCamera()
+            Camera.CFrame = CFrame.new(Vector3.new(0, -0.25, 6.2), Vector3.new(0, -0.4, 0))
+        end
+        ResetCamera()
+
+        local Overlay = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            Parent = Box,
+        })
+
+        local BoxFrame = New("Frame", {
+            BackgroundTransparency = 1,
+            BorderSizePixel = 1,
+            BorderColor3 = Info.BoxColor or Color3.fromRGB(255, 255, 255),
+            Size = UDim2.new(0.54, 0, 0.78, 0),
+            Position = UDim2.new(0.5, 0, 0.51, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Visible = Info.ShowBox,
+            Parent = Overlay,
+        })
+
+        local BoxStroke = New("UIStroke", {
+            Color = Color3.new(0, 0, 0),
+            Thickness = 1,
+            Parent = BoxFrame,
+        })
+
+        local NameLabel = New("TextLabel", {
+            Text = Info.NameText or "zitrexol",
+            Font = Library.Font,
+            TextSize = 13,
+            TextColor3 = Info.NameColor or Color3.fromRGB(150, 180, 255),
+            TextStrokeTransparency = 0,
+            TextStrokeColor3 = Color3.new(0, 0, 0),
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, 0, 0.07, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Visible = Info.ShowName,
+            Parent = Overlay,
+        })
+
+        local WeaponLabel = New("TextLabel", {
+            Text = Info.WeaponText or "Gun",
+            Font = Library.Font,
+            TextSize = 11,
+            TextColor3 = Info.WeaponColor or Color3.fromRGB(255, 255, 255),
+            TextStrokeTransparency = 0,
+            TextStrokeColor3 = Color3.new(0, 0, 0),
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, 0, 0.94, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Visible = Info.ShowWeapon,
+            Parent = Overlay,
+        })
+
+        local HealthBarBg = New("Frame", {
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+            BorderSizePixel = 1,
+            BorderColor3 = Color3.new(0, 0, 0),
+            Size = UDim2.new(0, 3, 0.78, 0),
+            Position = UDim2.new(0.20, 0, 0.51, 0),
+            AnchorPoint = Vector2.new(1, 0.5),
+            Visible = Info.ShowHealth or false,
+            Parent = Overlay,
+        })
+
+        local HealthBarFill = New("Frame", {
+            BackgroundColor3 = Color3.fromRGB(0, 255, 100),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, (Info.HealthPercent or 100) / 100, 0),
+            Position = UDim2.new(0, 0, 1, 0),
+            AnchorPoint = Vector2.new(0, 1),
+            Parent = HealthBarBg,
+        })
+
+        local ESPPreview = {
+            Connections = {},
+            Destroyed = false,
+            Type = "ESPPreview",
+            Visible = Info.Visible,
+            Interactive = Info.Interactive,
+            Holder = Holder,
+            Box = Box,
+            ViewportFrame = ViewportFrame,
+            WorldModel = WorldModel,
+            CharacterModel = CharacterModel,
+            Camera = Camera,
+            State = {
+                Box = Info.ShowBox,
+                BoxColor = Info.BoxColor,
+                Skeleton = Info.ShowSkeleton,
+                SkeletonColor = Info.SkeletonColor,
+                Name = Info.ShowName,
+                NameText = Info.NameText,
+                NameColor = Info.NameColor,
+                Chams = Info.ShowChams,
+                ChamsColor = Info.ChamsColor,
+                ChamsMaterial = Info.ChamsMaterial,
+                ChamsTransparency = Info.ChamsTransparency,
+                Weapon = Info.ShowWeapon,
+                WeaponText = Info.WeaponText,
+                WeaponColor = Info.WeaponColor,
+                Health = Info.ShowHealth,
+            }
+        }
+
+        local function ApplyChams()
+            for part, orig in pairs(OriginalProperties) do
+                if part and part.Parent then
+                    if ESPPreview.State.Chams then
+                        local mat = Enum.Material[ESPPreview.State.ChamsMaterial or "ForceField"] or Enum.Material.ForceField
+                        part.Material = mat
+                        part.Color = ESPPreview.State.ChamsColor or Color3.fromRGB(255, 0, 100)
+                        part.Transparency = ESPPreview.State.ChamsTransparency or 0.5
+                    else
+                        part.Material = orig.Material or Enum.Material.SmoothPlastic
+                        part.Color = orig.Color or Color3.fromRGB(180, 180, 185)
+                        part.Transparency = orig.Transparency or 0
+                    end
+                end
+            end
+        end
+
+        ApplyChams()
+
+        table.insert(ESPPreview.Connections, ViewportFrame.MouseEnter:Connect(function()
+            if not ESPPreview.Interactive then return end
+            for _, Side in Groupbox.Tab.Sides do Side.ScrollingEnabled = false end
+        end))
+
+        table.insert(ESPPreview.Connections, ViewportFrame.MouseLeave:Connect(function()
+            if not ESPPreview.Interactive then return end
+            for _, Side in Groupbox.Tab.Sides do Side.ScrollingEnabled = true end
+        end))
+
+        table.insert(ESPPreview.Connections, ViewportFrame.InputBegan:Connect(function(input)
+            if not ESPPreview.Interactive then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton2 or (input.UserInputType == Enum.UserInputType.Touch and not Pinching) then
+                Dragging = true
+                LastMousePos = input.Position
+            end
+        end))
+
+        table.insert(ESPPreview.Connections, UserInputService.InputEnded:Connect(function(input)
+            if Library.Unloaded or not ESPPreview.Interactive then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton2 or input.UserInputType == Enum.UserInputType.Touch then
+                Dragging = false
+            end
+        end))
+
+        table.insert(ESPPreview.Connections, UserInputService.InputChanged:Connect(function(input)
+            if Library.Unloaded or not ESPPreview.Interactive or not Dragging or Pinching then return end
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                local MouseDelta = input.Position - LastMousePos
+                LastMousePos = input.Position
+
+                local Pivot = Vector3.new(0, -0.4, 0)
+                local RotationY = CFrame.fromAxisAngle(Vector3.new(0, 1, 0), -MouseDelta.X * 0.01)
+                Camera.CFrame = CFrame.new(Pivot) * RotationY * CFrame.new(-Pivot) * Camera.CFrame
+
+                local RotationX = CFrame.fromAxisAngle(Camera.CFrame.RightVector, -MouseDelta.Y * 0.01)
+                local Pitched = CFrame.new(Pivot) * RotationX * CFrame.new(-Pivot) * Camera.CFrame
+                if Pitched.UpVector.Y > 0.1 then
+                    Camera.CFrame = Pitched
+                end
+            end
+        end))
+
+        table.insert(ESPPreview.Connections, ViewportFrame.InputChanged:Connect(function(input)
+            if not ESPPreview.Interactive then return end
+            if input.UserInputType == Enum.UserInputType.MouseWheel then
+                local Zoom = input.Position.Z * 0.5
+                local newCFrame = Camera.CFrame + Camera.CFrame.LookVector * Zoom
+                if (newCFrame.Position - Vector3.new(0, -0.4, 0)).Magnitude > 3 then
+                    Camera.CFrame = newCFrame
+                end
+            end
+        end))
+
+        function ESPPreview:SetBox(enabled, color)
+            ESPPreview.State.Box = enabled
+            BoxFrame.Visible = enabled
+            if color then
+                ESPPreview.State.BoxColor = color
+                BoxFrame.BorderColor3 = color
+            end
+        end
+
+        function ESPPreview:SetSkeleton(enabled, color)
+            ESPPreview.State.Skeleton = enabled
+            if color then ESPPreview.State.SkeletonColor = color end
+            for _, bone in ipairs(Bones) do
+                if bone and bone.Parent then
+                    bone.Transparency = enabled and 0 or 1
+                    if color then bone.Color = color end
+                end
+            end
+        end
+
+        function ESPPreview:SetName(enabled, text, color)
+            ESPPreview.State.Name = enabled
+            NameLabel.Visible = enabled
+            if text then
+                ESPPreview.State.NameText = text
+                NameLabel.Text = text
+            end
+            if color then
+                ESPPreview.State.NameColor = color
+                NameLabel.TextColor3 = color
+            end
+        end
+
+        function ESPPreview:SetChams(enabled, color, material, transparency)
+            ESPPreview.State.Chams = enabled
+            if color ~= nil then ESPPreview.State.ChamsColor = color end
+            if material ~= nil then ESPPreview.State.ChamsMaterial = material end
+            if transparency ~= nil then ESPPreview.State.ChamsTransparency = transparency end
+            ApplyChams()
+        end
+
+        function ESPPreview:SetWeapon(enabled, text, color)
+            ESPPreview.State.Weapon = enabled
+            WeaponLabel.Visible = enabled
+            if text then
+                ESPPreview.State.WeaponText = text
+                WeaponLabel.Text = text
+            end
+            if color then
+                ESPPreview.State.WeaponColor = color
+                WeaponLabel.TextColor3 = color
+            end
+        end
+
+        function ESPPreview:SetHealth(enabled, percent, color)
+            ESPPreview.State.Health = enabled
+            HealthBarBg.Visible = enabled
+            if percent then
+                HealthBarFill.Size = UDim2.new(1, 0, math.clamp(percent / 100, 0, 1), 0)
+            end
+            if color then
+                HealthBarFill.BackgroundColor3 = color
+            end
+        end
+
+        function ESPPreview:RefreshDummy()
+            BuildDummy()
+            BuildSkeleton()
+            ApplyChams()
+        end
+
+        function ESPPreview:ResetCamera()
+            ResetCamera()
+        end
+
+        function ESPPreview:SetHeight(Height)
+            assert(Height > 0, "Height must be greater than 0.")
+            Holder.Size = UDim2.new(1, 0, 0, Height)
+            Groupbox:Resize()
+        end
+
+        function ESPPreview:SetVisible(Visible)
+            ESPPreview.Visible = Visible
+            Holder.Visible = Visible
+            Groupbox:Resize()
+        end
+
+        function ESPPreview:Update(opts)
+            if not opts or typeof(opts) ~= "table" then return end
+            if opts.Box ~= nil or opts.BoxColor ~= nil then
+                ESPPreview:SetBox(opts.Box ~= nil and opts.Box or ESPPreview.State.Box, opts.BoxColor)
+            end
+            if opts.Skeleton ~= nil or opts.SkeletonColor ~= nil then
+                ESPPreview:SetSkeleton(opts.Skeleton ~= nil and opts.Skeleton or ESPPreview.State.Skeleton, opts.SkeletonColor)
+            end
+            if opts.Name ~= nil or opts.NameText ~= nil or opts.NameColor ~= nil then
+                ESPPreview:SetName(opts.Name ~= nil and opts.Name or ESPPreview.State.Name, opts.NameText, opts.NameColor)
+            end
+            if opts.Chams ~= nil or opts.ChamsColor ~= nil or opts.ChamsMaterial ~= nil or opts.ChamsTransparency ~= nil then
+                ESPPreview:SetChams(opts.Chams ~= nil and opts.Chams or ESPPreview.State.Chams, opts.ChamsColor, opts.ChamsMaterial, opts.ChamsTransparency)
+            end
+            if opts.Weapon ~= nil or opts.WeaponText ~= nil or opts.WeaponColor ~= nil then
+                ESPPreview:SetWeapon(opts.Weapon ~= nil and opts.Weapon or ESPPreview.State.Weapon, opts.WeaponText, opts.WeaponColor)
+            end
+        end
+
+        Groupbox:Resize()
+
+        ESPPreview.Holder = Holder
+        table.insert(Groupbox.Elements, ESPPreview)
+
+        Options[Idx] = ESPPreview
+
+        function ESPPreview:Destroy()
+            ESPPreview.Destroyed = true
+            if ESPPreview.Connections then
+                for _, Connection in ESPPreview.Connections do
+                    Connection:Disconnect()
+                end
+            end
+            if Holder then Holder:Destroy() end
+            local ElemIdx = table.find(Groupbox.Elements, ESPPreview)
+            if ElemIdx then table.remove(Groupbox.Elements, ElemIdx) end
+            Groupbox:Resize()
+            Options[Idx] = nil
+        end
+
+        return ESPPreview
     end
 
     function Funcs:AddImage(Idx, Info)
