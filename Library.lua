@@ -1126,7 +1126,6 @@ function Library:UpdateSearch(SearchText)
     end
 end
 
-end
 
 function Library:AddToRegistry(Instance, Properties)
     Library.Registry[Instance] = Properties
