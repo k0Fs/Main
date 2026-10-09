@@ -1085,7 +1085,7 @@ function Library:UpdateSearch(SearchText)
             end
         end
         
-        if SearchBox and SearchBox.Visible and SearchBox.AbsoluteSize.Y > 0 then
+        if SearchBox and SearchBox.Visible and SearchBox.AbsoluteSize.Y > 0 and Library.Toggled then
             Library.CustomSearchDropdown.Position = UDim2.new(
                 0, SearchBox.AbsolutePosition.X,
                 0, SearchBox.AbsolutePosition.Y + SearchBox.AbsoluteSize.Y + 4
@@ -1132,19 +1132,7 @@ function Library:UpdateSearch(SearchText)
                             end
                         end
                         
-                        if ElementInfo.Holder then
-                            task.spawn(function()
-                                local ogColor = ElementInfo.Holder.BackgroundColor3
-                                local ogTrans = ElementInfo.Holder.BackgroundTransparency
-                                ElementInfo.Holder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                                ElementInfo.Holder.BackgroundTransparency = 0.5
-                                task.wait(1)
-                                if ElementInfo.Holder then
-                                    ElementInfo.Holder.BackgroundColor3 = ogColor
-                                    ElementInfo.Holder.BackgroundTransparency = ogTrans
-                                end
-                            end)
-                        end
+
                     end)
                     
                     btn.MouseEnter:Connect(function() 
