@@ -1026,7 +1026,7 @@ function Library:UpdateSearch(SearchText)
         Library.CustomSearchDropdown = Instance.new("ScrollingFrame")
         Library.CustomSearchDropdown.Name = "CustomSearchDropdown"
         Library.CustomSearchDropdown.Size = UDim2.new(0, 250, 0, 200)
-        Library.CustomSearchDropdown.AnchorPoint = Vector2.new(1, 0)
+        Library.CustomSearchDropdown.AnchorPoint = Vector2.new(0, 0)
         Library.CustomSearchDropdown.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
         Library.CustomSearchDropdown.BorderSizePixel = 1
         Library.CustomSearchDropdown.BorderColor3 = Color3.fromRGB(45, 45, 45)
@@ -1060,23 +1060,40 @@ function Library:UpdateSearch(SearchText)
         return
     end
     
-    -- Find SearchBox to position dropdown
-    local SearchBox = nil
-    for _, inst in pairs(Library.ScreenGui:GetDescendants()) do
-        if inst.Name == "SearchBox" and inst:IsA("TextBox") then
-            SearchBox = inst
-            break
-        end
+    -- Start a RenderStepped loop to keep the dropdown under the SearchBox
+    if Library.SearchDropdownConnection then
+        Library.SearchDropdownConnection:Disconnect()
+        Library.SearchDropdownConnection = nil
     end
     
-    if SearchBox then
-        Library.CustomSearchDropdown.Position = UDim2.new(
-            0, SearchBox.AbsolutePosition.X + SearchBox.AbsoluteSize.X,
-            0, SearchBox.AbsolutePosition.Y + SearchBox.AbsoluteSize.Y + 4
-        )
-    else
-        Library.CustomSearchDropdown.Position = UDim2.new(0.5, 0, 0.5, 0)
-    end
+    Library.SearchDropdownConnection = game:GetService("RunService").RenderStepped:Connect(function()
+        if not Library.CustomSearchDropdown or not Library.CustomSearchDropdown.Parent or not Library.CustomSearchDropdown.Visible then
+            if Library.SearchDropdownConnection then
+                Library.SearchDropdownConnection:Disconnect()
+                Library.SearchDropdownConnection = nil
+            end
+            return
+        end
+        
+        local SearchBox = nil
+        if Library.ScreenGui then
+            for _, inst in pairs(Library.ScreenGui:GetDescendants()) do
+                if inst.Name == "SearchBox" and inst:IsA("TextBox") then
+                    SearchBox = inst
+                    break
+                end
+            end
+        end
+        
+        if SearchBox and SearchBox.Visible and SearchBox.AbsoluteSize.Y > 0 then
+            Library.CustomSearchDropdown.Position = UDim2.new(
+                0, SearchBox.AbsolutePosition.X,
+                0, SearchBox.AbsolutePosition.Y + SearchBox.AbsoluteSize.Y + 4
+            )
+        else
+            Library.CustomSearchDropdown.Visible = false
+        end
+    end)
     
     local found = 0
     for TabName, Tab in pairs(Library.Tabs) do
@@ -1101,9 +1118,33 @@ function Library:UpdateSearch(SearchText)
                     
                     btn.MouseButton1Click:Connect(function()
                         Library.SearchText = ""
-                        if SearchBox then SearchBox.Text = "" end
                         Library.CustomSearchDropdown.Visible = false
                         Tab:Show()
+                        
+                        local SearchBox = nil
+                        if Library.ScreenGui then
+                            for _, inst in pairs(Library.ScreenGui:GetDescendants()) do
+                                if inst.Name == "SearchBox" and inst:IsA("TextBox") then
+                                    SearchBox = inst
+                                    SearchBox.Text = ""
+                                    break
+                                end
+                            end
+                        end
+                        
+                        if ElementInfo.Holder then
+                            task.spawn(function()
+                                local ogColor = ElementInfo.Holder.BackgroundColor3
+                                local ogTrans = ElementInfo.Holder.BackgroundTransparency
+                                ElementInfo.Holder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                                ElementInfo.Holder.BackgroundTransparency = 0.5
+                                task.wait(1)
+                                if ElementInfo.Holder then
+                                    ElementInfo.Holder.BackgroundColor3 = ogColor
+                                    ElementInfo.Holder.BackgroundTransparency = ogTrans
+                                end
+                            end)
+                        end
                     end)
                     
                     btn.MouseEnter:Connect(function() 
@@ -1659,8 +1700,31 @@ function Library:MakeDraggable(UI: GuiObject, DragFrame: GuiObject, IgnoreToggle
 
         if Dragging and IsHoverInput(Input) then
             local Delta = Input.Position - StartPos
-            UI.Position =
-                UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+            local newScaleX = FramePos.X.Scale
+            local newOffsetX = FramePos.X.Offset + Delta.X
+            local newScaleY = FramePos.Y.Scale
+            local newOffsetY = FramePos.Y.Offset + Delta.Y
+            
+            if workspace and workspace.CurrentCamera then
+                local viewSize = workspace.CurrentCamera.ViewportSize
+                local uiSize = UI.AbsoluteSize
+                local anchor = UI.AnchorPoint
+                
+                local pixelX = (newScaleX * viewSize.X) + newOffsetX
+                local pixelY = (newScaleY * viewSize.Y) + newOffsetY
+                
+                local minX = anchor.X * uiSize.X
+                local maxX = viewSize.X - (1 - anchor.X) * uiSize.X
+                local minY = anchor.Y * uiSize.Y
+                local maxY = viewSize.Y - (1 - anchor.Y) * uiSize.Y
+                
+                local clampedX = math.clamp(pixelX, minX, maxX)
+                local clampedY = math.clamp(pixelY, minY, maxY)
+                
+                UI.Position = UDim2.new(0, clampedX, 0, clampedY)
+            else
+                UI.Position = UDim2.new(newScaleX, newOffsetX, newScaleY, newOffsetY)
+            end
         end
     end)
 
