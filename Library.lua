@@ -1021,86 +1021,111 @@ end
 
 function Library:UpdateSearch(SearchText)
     Library.SearchText = SearchText
-
-    local TabsToReset = {}
-
-    if Library.GlobalSearch then
-        for _, Tab in Library.Tabs do
-            if typeof(Tab) == "table" and not Tab.IsKeyTab then
-                table.insert(TabsToReset, Tab)
-            end
-        end
-    elseif Library.LastSearchTab and typeof(Library.LastSearchTab) == "table" then
-        table.insert(TabsToReset, Library.LastSearchTab)
+    
+    if not Library.CustomSearchDropdown then
+        Library.CustomSearchDropdown = Instance.new("ScrollingFrame")
+        Library.CustomSearchDropdown.Name = "CustomSearchDropdown"
+        Library.CustomSearchDropdown.Size = UDim2.new(0, 250, 0, 200)
+        Library.CustomSearchDropdown.AnchorPoint = Vector2.new(1, 0)
+        Library.CustomSearchDropdown.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Library.CustomSearchDropdown.BorderSizePixel = 1
+        Library.CustomSearchDropdown.BorderColor3 = Color3.fromRGB(45, 45, 45)
+        Library.CustomSearchDropdown.ZIndex = 1000
+        Library.CustomSearchDropdown.Visible = false
+        Library.CustomSearchDropdown.ScrollBarThickness = 4
+        Library.CustomSearchDropdown.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        
+        local UIListLayout = Instance.new("UIListLayout")
+        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        UIListLayout.Parent = Library.CustomSearchDropdown
+        
+        local UIPadding = Instance.new("UIPadding")
+        UIPadding.PaddingTop = UDim.new(0, 4)
+        UIPadding.PaddingBottom = UDim.new(0, 4)
+        UIPadding.PaddingLeft = UDim.new(0, 4)
+        UIPadding.Parent = Library.CustomSearchDropdown
     end
-
-    for _, Tab in ipairs(TabsToReset) do
-        ResetTab(Tab)
+    
+    if not Library.CustomSearchDropdown.Parent then
+        Library.CustomSearchDropdown.Parent = Library.ScreenGui
     end
-
-    local Search = SearchText:lower()
-    if Trim(Search) == "" then
-        Library.Searching = false
-        Library.LastSearchTab = nil
+    
+    for _, child in ipairs(Library.CustomSearchDropdown:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    
+    local Search = SearchText:lower():match("^%s*(.-)%s*$")
+    if Search == "" then
+        Library.CustomSearchDropdown.Visible = false
         return
     end
-    if not Library.GlobalSearch and Library.ActiveTab and Library.ActiveTab.IsKeyTab then
-        Library.Searching = false
-        Library.LastSearchTab = nil
-        return
-    end
-
-    Library.Searching = true
-
-    local TabsToSearch = {}
-
-    if Library.GlobalSearch then
-        TabsToSearch = TabsToReset
-        if #TabsToSearch == 0 then
-            for _, Tab in Library.Tabs do
-                if typeof(Tab) == "table" and not Tab.IsKeyTab then
-                    table.insert(TabsToSearch, Tab)
-                end
-            end
-        end
-    elseif Library.ActiveTab then
-        table.insert(TabsToSearch, Library.ActiveTab)
-    end
-
-    local FirstVisibleTab = nil
-    local ActiveHasVisible = false
-
-    for _, Tab in ipairs(TabsToSearch) do
-        local HasVisible = ApplySearchToTab(Tab, Search)
-        if HasVisible then
-            if not FirstVisibleTab then
-                FirstVisibleTab = Tab
-            end
-            if Tab == Library.ActiveTab then
-                ActiveHasVisible = true
-            end
+    
+    -- Find SearchBox to position dropdown
+    local SearchBox = nil
+    for _, inst in ipairs(Library.ScreenGui:GetDescendants()) do
+        if inst.Name == "SearchBox" and inst:IsA("TextBox") then
+            SearchBox = inst
+            break
         end
     end
-
-    if Library.GlobalSearch then
-        if ActiveHasVisible and Library.ActiveTab then
-            Library.ActiveTab:RefreshSides()
-        elseif FirstVisibleTab then
-            local SearchMarker = SearchText
-            task.defer(function()
-                if Library.SearchText ~= SearchMarker then
-                    return
-                end
-
-                if Library.ActiveTab ~= FirstVisibleTab then
-                    FirstVisibleTab:Show()
-                end
-            end)
-        end
-        Library.LastSearchTab = nil
+    
+    if SearchBox then
+        Library.CustomSearchDropdown.Position = UDim2.new(
+            0, SearchBox.AbsolutePosition.X + SearchBox.AbsoluteSize.X,
+            0, SearchBox.AbsolutePosition.Y + SearchBox.AbsoluteSize.Y + 4
+        )
     else
-        Library.LastSearchTab = Library.ActiveTab
+        Library.CustomSearchDropdown.Position = UDim2.new(0.5, 0, 0.5, 0)
     end
+    
+    local found = 0
+    for _, Tab in ipairs(Library.Tabs) do
+        if typeof(Tab) ~= "table" or Tab.IsKeyTab then continue end
+        for _, Groupbox in ipairs(Tab.Groupboxes) do
+            for _, ElementInfo in ipairs(Groupbox.Elements) do
+                if ElementInfo.Type == "Divider" then continue end
+                
+                local name = ElementInfo.Text or ""
+                if name:lower():find(Search, 1, true) then
+                    found = found + 1
+                    local btn = Instance.new("TextButton")
+                    btn.Size = UDim2.new(1, -4, 0, 22)
+                    btn.BackgroundTransparency = 1
+                    btn.Text = " [" .. Tab.Name .. "] " .. name
+                    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+                    btn.TextXAlignment = Enum.TextXAlignment.Left
+                    btn.Font = Enum.Font.Code
+                    btn.TextSize = 13
+                    btn.ZIndex = 1001
+                    btn.Parent = Library.CustomSearchDropdown
+                    
+                    btn.MouseButton1Click:Connect(function()
+                        Library.SearchText = ""
+                        if SearchBox then SearchBox.Text = "" end
+                        Library.CustomSearchDropdown.Visible = false
+                        Tab:Show()
+                    end)
+                    
+                    btn.MouseEnter:Connect(function() 
+                        btn.BackgroundTransparency = 0.8
+                        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                    end)
+                    btn.MouseLeave:Connect(function() 
+                        btn.BackgroundTransparency = 1 
+                    end)
+                end
+            end
+        end
+    end
+    
+    if found > 0 then
+        Library.CustomSearchDropdown.Size = UDim2.new(0, 280, 0, math.min(found * 22 + 8, 300))
+        Library.CustomSearchDropdown.Visible = true
+    else
+        Library.CustomSearchDropdown.Visible = false
+    end
+end
+
 end
 
 function Library:AddToRegistry(Instance, Properties)
