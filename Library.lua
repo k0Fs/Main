@@ -9150,7 +9150,6 @@ function Library:CreateWindow(WindowInfo)
         if WindowInfo.Icon then
             local Icon = Library:GetCustomIcon(WindowInfo.Icon)
             WindowIcon = New("ImageLabel", {
-                Visible = false,
                 Image = Icon.Url,
                 ImageRectOffset = Icon.ImageRectOffset,
                 ImageRectSize = Icon.ImageRectSize,
@@ -9174,12 +9173,11 @@ function Library:CreateWindow(WindowInfo)
             20,
             TitleHolder.AbsoluteSize.X - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 6 or 0) - 12
         )
-                WindowTitle = New("ImageLabel", {
+        WindowTitle = New("TextLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 1, -12),
-            Position = UDim2.new(0, 0, 0, 6),
-            Image = "https://plain-eeur-prod-public.komododecks.com/202610/09/36bWDr4Dq0IH1Q8rWV68/image.png",
-            ScaleType = Enum.ScaleType.Fit,
+            Size = UDim2.new(0, X, 1, 0),
+            Text = WindowInfo.Title,
+            TextSize = 20,
             Parent = TitleHolder,
         })
 
@@ -11998,7 +11996,6 @@ function Library:CreateLoading(LoadingInfo)
     if LoadingInfo.Icon then
         local Icon = Library:GetCustomIcon(LoadingInfo.Icon)
         local _WindowIcon = New("ImageLabel", {
-                Visible = false,
             Image = Icon.Url,
             ImageRectOffset = Icon.ImageRectOffset,
             ImageRectSize = Icon.ImageRectSize,
@@ -12022,14 +12019,13 @@ function Library:CreateLoading(LoadingInfo)
         20,
         TitleHolder.AbsoluteSize.X - (LoadingInfo.Icon and (LoadingInfo.IconSize.X.Offset + 6) or 0) - 12
     )
-    local _        WindowTitle = New("ImageLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 1, -12),
-            Position = UDim2.new(0, 0, 0, 6),
-            Image = "https://plain-eeur-prod-public.komododecks.com/202610/09/36bWDr4Dq0IH1Q8rWV68/image.png",
-            ScaleType = Enum.ScaleType.Fit,
-            Parent = TitleHolder,
-        })
+    local _WindowTitle = New("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, TitleX, 1, 0),
+        Text = LoadingInfo.Title,
+        TextSize = 20,
+        Parent = TitleHolder,
+    })
 
     Library:MakeLine(Container, {
         Position = UDim2.fromOffset(0, 48),
