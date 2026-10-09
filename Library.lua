@@ -1079,7 +1079,7 @@ function Library:UpdateSearch(SearchText)
     end
     
     local found = 0
-    for _, Tab in pairs(Library.Tabs) do
+    for TabName, Tab in pairs(Library.Tabs) do
         if typeof(Tab) ~= "table" or Tab.IsKeyTab then continue end
         for _, Groupbox in pairs(Tab.Groupboxes) do
             for _, ElementInfo in pairs(Groupbox.Elements) do
@@ -1091,7 +1091,7 @@ function Library:UpdateSearch(SearchText)
                     local btn = Instance.new("TextButton")
                     btn.Size = UDim2.new(1, -4, 0, 22)
                     btn.BackgroundTransparency = 1
-                    btn.Text = " [" .. Tab.Name .. "] " .. name
+                    btn.Text = " [" .. tostring(TabName) .. "] " .. name
                     btn.TextColor3 = Color3.fromRGB(220, 220, 220)
                     btn.TextXAlignment = Enum.TextXAlignment.Left
                     btn.Font = Enum.Font.Code
