@@ -1050,7 +1050,7 @@ function Library:UpdateSearch(SearchText)
         Library.CustomSearchDropdown.Parent = Library.ScreenGui
     end
     
-    for _, child in ipairs(Library.CustomSearchDropdown:GetChildren()) do
+    for _, child in pairs(Library.CustomSearchDropdown:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
     
@@ -1062,7 +1062,7 @@ function Library:UpdateSearch(SearchText)
     
     -- Find SearchBox to position dropdown
     local SearchBox = nil
-    for _, inst in ipairs(Library.ScreenGui:GetDescendants()) do
+    for _, inst in pairs(Library.ScreenGui:GetDescendants()) do
         if inst.Name == "SearchBox" and inst:IsA("TextBox") then
             SearchBox = inst
             break
@@ -1079,10 +1079,10 @@ function Library:UpdateSearch(SearchText)
     end
     
     local found = 0
-    for _, Tab in ipairs(Library.Tabs) do
+    for _, Tab in pairs(Library.Tabs) do
         if typeof(Tab) ~= "table" or Tab.IsKeyTab then continue end
-        for _, Groupbox in ipairs(Tab.Groupboxes) do
-            for _, ElementInfo in ipairs(Groupbox.Elements) do
+        for _, Groupbox in pairs(Tab.Groupboxes) do
+            for _, ElementInfo in pairs(Groupbox.Elements) do
                 if ElementInfo.Type == "Divider" then continue end
                 
                 local name = ElementInfo.Text or ""
