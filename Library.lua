@@ -6457,7 +6457,6 @@ do
         local SearchBox
         if Info.Searchable then
             SearchBox = New("TextBox", {
-            TextXAlignment = Enum.TextXAlignment.Right,
                 BackgroundTransparency = 1,
                 PlaceholderText = "Search...",
                 Position = UDim2.fromOffset(-8, 0),
@@ -9051,7 +9050,7 @@ function Library:CreateWindow(WindowInfo)
     local FooterLabel
     local TopBar
 
-    local InitialLeftWidth = 55
+    local InitialLeftWidth = math.ceil(WindowInfo.Size.X.Offset * 0.3)
     local IsCompact = WindowInfo.SidebarCompacted
     local LastExpandedWidth = InitialLeftWidth
 
@@ -9251,7 +9250,6 @@ function Library:CreateWindow(WindowInfo)
         })
 
         SearchBox = New("TextBox", {
-            TextXAlignment = Enum.TextXAlignment.Right,
             BackgroundColor3 = "MainColor",
             PlaceholderText = "Search",
             Size = WindowInfo.SearchbarSize,
