@@ -6457,6 +6457,7 @@ do
         local SearchBox
         if Info.Searchable then
             SearchBox = New("TextBox", {
+            TextXAlignment = Enum.TextXAlignment.Right,
                 BackgroundTransparency = 1,
                 PlaceholderText = "Search...",
                 Position = UDim2.fromOffset(-8, 0),
@@ -9050,7 +9051,7 @@ function Library:CreateWindow(WindowInfo)
     local FooterLabel
     local TopBar
 
-    local InitialLeftWidth = math.ceil(WindowInfo.Size.X.Offset * 0.3)
+    local InitialLeftWidth = 55
     local IsCompact = WindowInfo.SidebarCompacted
     local LastExpandedWidth = InitialLeftWidth
 
@@ -9150,6 +9151,7 @@ function Library:CreateWindow(WindowInfo)
         if WindowInfo.Icon then
             local Icon = Library:GetCustomIcon(WindowInfo.Icon)
             WindowIcon = New("ImageLabel", {
+                Visible = false,
                 Image = Icon.Url,
                 ImageRectOffset = Icon.ImageRectOffset,
                 ImageRectSize = Icon.ImageRectSize,
@@ -9173,11 +9175,12 @@ function Library:CreateWindow(WindowInfo)
             20,
             TitleHolder.AbsoluteSize.X - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 6 or 0) - 12
         )
-        WindowTitle = New("TextLabel", {
+                WindowTitle = New("ImageLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(0, X, 1, 0),
-            Text = WindowInfo.Title,
-            TextSize = 20,
+            Size = UDim2.new(1, 0, 1, -12),
+            Position = UDim2.new(0, 0, 0, 6),
+            Image = "https://plain-eeur-prod-public.komododecks.com/202610/09/36bWDr4Dq0IH1Q8rWV68/image.png",
+            ScaleType = Enum.ScaleType.Fit,
             Parent = TitleHolder,
         })
 
@@ -9248,6 +9251,7 @@ function Library:CreateWindow(WindowInfo)
         })
 
         SearchBox = New("TextBox", {
+            TextXAlignment = Enum.TextXAlignment.Right,
             BackgroundColor3 = "MainColor",
             PlaceholderText = "Search",
             Size = WindowInfo.SearchbarSize,
@@ -11996,6 +12000,7 @@ function Library:CreateLoading(LoadingInfo)
     if LoadingInfo.Icon then
         local Icon = Library:GetCustomIcon(LoadingInfo.Icon)
         local _WindowIcon = New("ImageLabel", {
+                Visible = false,
             Image = Icon.Url,
             ImageRectOffset = Icon.ImageRectOffset,
             ImageRectSize = Icon.ImageRectSize,
@@ -12019,13 +12024,14 @@ function Library:CreateLoading(LoadingInfo)
         20,
         TitleHolder.AbsoluteSize.X - (LoadingInfo.Icon and (LoadingInfo.IconSize.X.Offset + 6) or 0) - 12
     )
-    local _WindowTitle = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, TitleX, 1, 0),
-        Text = LoadingInfo.Title,
-        TextSize = 20,
-        Parent = TitleHolder,
-    })
+    local _        WindowTitle = New("ImageLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, -12),
+            Position = UDim2.new(0, 0, 0, 6),
+            Image = "https://plain-eeur-prod-public.komododecks.com/202610/09/36bWDr4Dq0IH1Q8rWV68/image.png",
+            ScaleType = Enum.ScaleType.Fit,
+            Parent = TitleHolder,
+        })
 
     Library:MakeLine(Container, {
         Position = UDim2.fromOffset(0, 48),
