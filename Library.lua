@@ -9675,6 +9675,9 @@ function Library:CreateWindow(WindowInfo)
 
         Icon = Library:GetCustomIcon(Icon)
         do
+            local autoOrder = (#Tabs:GetChildren() + 1) * 10
+            Order = Order or autoOrder
+
             TabButton = New("TextButton", {
                 BackgroundColor3 = "MainColor",
                 BackgroundTransparency = 1,
@@ -10816,12 +10819,7 @@ function Library:CreateWindow(WindowInfo)
                 }):Play()
             end)
 
-            local layoutOrder = (TabButton.LayoutOrder or 0)
-            if layoutOrder == 0 then
-                -- Assign layout order to keep Tabs organized
-                layoutOrder = (#Library.Tabs + 1) * 10
-                TabButton.LayoutOrder = layoutOrder
-            end
+            local layoutOrder = TabButton.LayoutOrder or 20
 
             SubTabHolder = New("Frame", {
                 AutomaticSize = Enum.AutomaticSize.Y,
