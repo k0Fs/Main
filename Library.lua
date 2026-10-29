@@ -10845,6 +10845,7 @@ function Library:CreateWindow(WindowInfo)
                 Parent = SubTabHolder,
             })
 
+            local lastArrowClick = 0
             local function ToggleExpand()
                 SubTabExpanded = not SubTabExpanded
                 SubTabHolder.Visible = SubTabExpanded
@@ -10855,7 +10856,18 @@ function Library:CreateWindow(WindowInfo)
                 }):Play()
             end
 
-            ArrowButton.MouseButton1Click:Connect(ToggleExpand)
+            ArrowButton.MouseButton1Click:Connect(function()
+                lastArrowClick = tick()
+                ToggleExpand()
+            end)
+            TabButton.MouseButton1Click:Connect(function()
+                if tick() - lastArrowClick < 0.15 then return end
+                if Tab == Library.ActiveTab then
+                    ToggleExpand()
+                elseif not SubTabExpanded then
+                    ToggleExpand()
+                end
+            end)
 
             Tab.ArrowButton = ArrowButton
             Tab.SubTabHolder = SubTabHolder
@@ -11009,6 +11021,7 @@ function Library:CreateWindow(WindowInfo)
                 Description = SubDescription,
                 ParentTab = Tab,
                 Canvas = SubCanvas,
+                Container = SubContainer,
                 Sides = { SubLeft, SubRight },
                 Groupboxes = {},
                 Tabboxes = {},
